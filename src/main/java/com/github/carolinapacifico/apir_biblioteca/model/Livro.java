@@ -1,4 +1,4 @@
-package com.github.ricardo_almeidas.apir_biblioteca.model;
+package com.github.carolinapacifico.apir_biblioteca.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

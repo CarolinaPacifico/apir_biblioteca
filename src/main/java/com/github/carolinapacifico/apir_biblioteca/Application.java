@@ -1,4 +1,4 @@
-package com.github.ricardo_almeidas.apir_biblioteca;
+package com.github.carolinapacifico.apir_biblioteca;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

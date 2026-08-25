@@ -31,12 +31,12 @@ A aplicação possui dois profiles:
 
 A imagem oficial da aplicação está publicada em:
 
-**https://hub.docker.com/r/riichiarelli/apir_biblioteca**
+**https://hub.docker.com/r/carolinapacifico/apir_biblioteca**
 
 ### 1. Baixar a imagem
 
 ```bash
-docker pull riichiarelli/apir_biblioteca:latest
+docker pull carolinapacifico/apir_biblioteca:latest
 ```
 
 ### 2. Subir um banco MySQL
@@ -66,7 +66,7 @@ docker run -d --name apir-biblioteca --network apir-net \
   -e DB_NAME=biblioteca_db \
   -e DB_USER=root \
   -e DB_PASSWORD=root_pwd \
-  riichiarelli/apir_biblioteca:latest
+  carolinapacifico/apir_biblioteca:latest
 ```
 
 > No PowerShell, troque as quebras de linha `\` por acento grave `` ` ``, ou rode o comando em uma única linha.
@@ -223,5 +223,5 @@ O `Dockerfile` usa build multi-stage: compila o projeto com Maven em uma imagem 
 
 ## 👨‍💻 Autor
 
-Ricardo Almeida
+Carolina Pacifico
 Projeto desenvolvido para fins acadêmicos (Checkpoint 1 — Microservices and Web Engineering).

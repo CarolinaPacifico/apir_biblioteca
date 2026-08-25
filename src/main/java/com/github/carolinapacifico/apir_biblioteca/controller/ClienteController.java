@@ -1,7 +1,7 @@
-package com.github.ricardo_almeidas.apir_biblioteca.controller;
+package com.github.carolinapacifico.apir_biblioteca.controller;
 
-import com.github.ricardo_almeidas.apir_biblioteca.model.Cliente;
-import com.github.ricardo_almeidas.apir_biblioteca.repository.ClienteRepository;
+import com.github.carolinapacifico.apir_biblioteca.model.Cliente;
+import com.github.carolinapacifico.apir_biblioteca.repository.ClienteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

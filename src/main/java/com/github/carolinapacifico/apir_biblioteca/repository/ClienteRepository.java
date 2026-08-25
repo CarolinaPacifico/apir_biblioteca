@@ -1,6 +1,6 @@
-package com.github.ricardo_almeidas.apir_biblioteca.repository;
+package com.github.carolinapacifico.apir_biblioteca.repository;
 
-import com.github.ricardo_almeidas.apir_biblioteca.model.Cliente;
+import com.github.carolinapacifico.apir_biblioteca.model.Cliente;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
