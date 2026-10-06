@@ -1,176 +1,179 @@
 # 📚 API Biblioteca
 
-API REST desenvolvida com **Spring Boot** para gerenciamento de **clientes** e **livros** em um sistema de biblioteca.
+API REST desenvolvida com **Java + Spring Boot** para gerenciamento de **clientes** e **livros** de uma biblioteca, com persistência em **SQL Server**.
+
+Projeto desenvolvido para o **Check Point 2 — Microservices and Web Engineering (2º semestre/2026)**.
 
 ---
 
 ## 🚀 Tecnologias utilizadas
 
 * Java 17
-* Spring Boot 4
+* Spring Boot 4 (Web MVC)
 * Spring Data JPA / Hibernate
-* MySQL 8
+* **Microsoft SQL Server 2022**
 * Flyway (migrações de banco)
-* Docker
+* Docker / Docker Compose
 * Swagger / OpenAPI (springdoc)
 
 ---
 
-## ⚙️ Profiles de execução
+## 🗂️ Estrutura do projeto
 
-A aplicação possui dois profiles:
-
-| Profile | Uso | Banco de dados | Schema |
-|---|---|---|---|
-| `default` | Desenvolvimento local (IDE / `mvnw`) | `localhost:3306` | `ddl-auto=update` |
-| `prd` | Produção / execução via Docker | configurável por variáveis de ambiente | `ddl-auto=validate` — as tabelas **não** são criadas pela aplicação, apenas validadas. Quem cria/atualiza o schema é o **Flyway**, através de migrações versionadas em `src/main/resources/db/migration` |
-
----
-
-## 🐳 Rodando a partir da imagem publicada no Docker Hub
-
-A imagem oficial da aplicação está publicada em:
-
-**https://hub.docker.com/r/carolinapacifico/apir_biblioteca**
-
-### 1. Baixar a imagem
-
-```bash
-docker pull carolinapacifico/apir_biblioteca:latest
 ```
+src/main/java/com/github/carolinapacifico/apir_biblioteca
+├── Application.java          # classe principal do Spring Boot
+├── controller/               # endpoints REST (ClienteController, LivroController)
+├── model/                    # entidades JPA (Cliente, Livro) mapeadas para as tabelas
+└── repository/               # interfaces Spring Data JPA (JpaRepository)
 
-### 2. Subir um banco MySQL
-
-A aplicação precisa de um MySQL acessível. Suba um container dedicado, na mesma rede Docker que será usada pela aplicação:
-
-```bash
-docker network create apir-net
-
-docker run -d --name mysql-biblioteca --network apir-net \
-  -e MYSQL_ROOT_PASSWORD=root_pwd \
-  -e MYSQL_DATABASE=biblioteca_db \
-  -p 3306:3306 \
-  mysql:8.4
-```
-
-Aguarde alguns segundos até o MySQL terminar de iniciar antes do próximo passo.
-
-### 3. Rodar a aplicação (profile `prd`)
-
-```bash
-docker run -d --name apir-biblioteca --network apir-net \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=prd \
-  -e DB_HOST=mysql-biblioteca \
-  -e DB_PORT=3306 \
-  -e DB_NAME=biblioteca_db \
-  -e DB_USER=root \
-  -e DB_PASSWORD=root_pwd \
-  carolinapacifico/apir_biblioteca:latest
-```
-
-> No PowerShell, troque as quebras de linha `\` por acento grave `` ` ``, ou rode o comando em uma única linha.
-
-O comando acima:
-* mapeia a porta **8080** do container para a porta 8080 da máquina;
-* define o profile de execução como **`prd`**;
-* passa as variáveis de ambiente necessárias para conexão com o banco.
-
-### 4. Variáveis de ambiente
-
-| Variável | Obrigatória | Padrão | Descrição |
-|---|---|---|---|
-| `SPRING_PROFILES_ACTIVE` | Sim (para produção) | `default` | Profile de execução (`default` ou `prd`) |
-| `DB_HOST` | Não | `mysql` | Host do MySQL |
-| `DB_PORT` | Não | `3306` | Porta do MySQL |
-| `DB_NAME` | Não | `biblioteca_db` | Nome do banco de dados |
-| `DB_USER` | Não | `root` | Usuário do banco |
-| `DB_PASSWORD` | Não | `root_pwd` | Senha do banco |
-
-### 5. Verificar se subiu corretamente
-
-```bash
-docker logs apir-biblioteca
-```
-
-Deve aparecer `The following 1 profile is active: "prd"` e, em seguida, `Started Application`.
-
-### 6. Parar e remover os containers
-
-```bash
-docker rm -f apir-biblioteca mysql-biblioteca
-docker network rm apir-net
+src/main/resources
+├── application.properties      # configuração padrão (local)
+├── application-prd.properties  # configuração do profile prd (Docker)
+└── db/migration/               # scripts Flyway (V1 clientes, V2 livros)
 ```
 
 ---
 
-## 📘 Acessando o Swagger / OpenAPI
+## 🗄️ Banco de dados (SQL Server)
 
-Com a aplicação rodando (local ou via Docker), acesse no navegador:
+### Informações de conexão
 
+| Item | Valor padrão |
+|---|---|
+| Servidor / host | `localhost` |
+| Porta | `1433` |
+| Banco (database) | `biblioteca_db` |
+| Usuário | `sa` |
+| Senha | `Biblioteca@2026` |
+| URL JDBC | `jdbc:sqlserver://localhost:1433;databaseName=biblioteca_db;encrypt=true;trustServerCertificate=true` |
+
+### Tabelas
+
+As tabelas são criadas automaticamente pelo **Flyway** na primeira execução da aplicação (`src/main/resources/db/migration`):
+
+| Tabela | Colunas |
+|---|---|
+| `clientes` | `id` (BIGINT IDENTITY, PK), `nome`, `nome_livro`, `duracao_aluguel`, `telefone` |
+| `livros` | `id` (BIGINT IDENTITY, PK), `nome_livro`, `genero`, `autor`, `qtd_paginas` |
+
+> O Hibernate roda com `ddl-auto=validate`: ele apenas confere se as entidades batem com as tabelas. Quem cria o schema é o Flyway.
+
+### Subindo um SQL Server local com Docker
+
+O `docker-compose.yml` do projeto sobe um SQL Server 2022 e já cria o banco `biblioteca_db`:
+
+```bash
+docker compose up -d
 ```
-http://localhost:8080/
+
+Aguarde ~30 segundos (o container `sqlserver_biblioteca` precisa ficar `healthy`). Para conferir:
+
+```bash
+docker compose ps
 ```
 
-A UI do Swagger está configurada na raiz da aplicação (`springdoc.swagger-ui.path=/`).
+### Usando um SQL Server já existente (remoto ou local)
 
-A especificação OpenAPI (JSON) fica disponível em:
+Basta criar o banco e apontar a aplicação para ele:
 
+```sql
+CREATE DATABASE biblioteca_db;
 ```
-http://localhost:8080/v3/api-docs
+
+A conexão é configurada por variáveis de ambiente (os valores padrão estão em `application.properties`):
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `DB_HOST` | `localhost` (`sqlserver` no profile `prd`) | Host do SQL Server |
+| `DB_PORT` | `1433` | Porta do SQL Server |
+| `DB_NAME` | `biblioteca_db` | Nome do banco |
+| `DB_USER` | `sa` | Usuário |
+| `DB_PASSWORD` | `Biblioteca@2026` | Senha |
+| `SPRING_PROFILES_ACTIVE` | `default` | Profile (`default` ou `prd`) |
+
+Exemplo (PowerShell):
+
+```powershell
+$env:DB_HOST="meu-servidor.database.windows.net"; $env:DB_USER="usuario"; $env:DB_PASSWORD="senha"
+.\mvnw.cmd spring-boot:run
+```
+
+Exemplo (bash):
+
+```bash
+DB_HOST=meu-servidor DB_USER=usuario DB_PASSWORD=senha ./mvnw spring-boot:run
 ```
 
 ---
 
-## 💻 Rodando localmente sem Docker (profile `default`)
+## ▶️ Executando a aplicação
 
 ### Pré-requisitos
-* Java 17
-* Maven (ou usar o `mvnw` incluso)
 
-### Passos
+* Java 17+
+* Docker (para subir o SQL Server) **ou** um SQL Server acessível
+* Maven (opcional — o projeto inclui o wrapper `mvnw`)
 
-1. Suba um MySQL local (pode usar o `docker-compose.yml` do projeto):
+### Passo a passo
+
+1. Suba o SQL Server:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
-2. Rode a aplicação (profile `default` já é o padrão):
+2. Rode a aplicação:
    ```bash
-   ./mvnw spring-boot:run
+   ./mvnw spring-boot:run      # Linux/macOS
+   .\mvnw.cmd spring-boot:run  # Windows
    ```
-   No Windows: `mvnw spring-boot:run`
-3. Acesse `http://localhost:8080`.
+3. Acesse o Swagger em **http://localhost:8080/**.
+
+No log deve aparecer `Successfully applied 2 migrations` (primeira execução) e `Started Application`.
 
 ---
 
-## 🏗️ Build da imagem Docker localmente
-
-Caso queira gerar a imagem você mesmo a partir do código-fonte:
+## 🐳 Executando a aplicação também em Docker (profile `prd`)
 
 ```bash
+# 1. Subir o SQL Server (cria a rede apir_biblioteca_default)
+docker compose up -d
+
+# 2. Gerar a imagem da aplicação
 docker build -t apir_biblioteca .
+
+# 3. Rodar a aplicação na mesma rede do SQL Server
+docker run -d --name apir-biblioteca --network apir_biblioteca_default \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prd \
+  -e DB_HOST=sqlserver \
+  -e DB_PASSWORD=Biblioteca@2026 \
+  apir_biblioteca
 ```
 
-O `Dockerfile` usa build multi-stage: compila o projeto com Maven em uma imagem intermediária e empacota o `.jar` final em uma imagem Java 17 (JRE) enxuta, expondo a porta `8080`.
+> No PowerShell, troque as quebras de linha `\` por acento grave `` ` `` ou rode em uma única linha.
 
 ---
 
-## 📚 Endpoints disponíveis
+## 📚 Endpoints
 
-### 📖 Livros (`/livros`)
+Base URL: `http://localhost:8080`
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `POST` | `/livros` | Criar livro |
-| `GET` | `/livros` | Listar livros |
-| `GET` | `/livros/{id}` | Buscar por ID |
-| `PUT` | `/livros/{id}` | Atualizar livro |
-| `DELETE` | `/livros/{id}` | Deletar livro |
+Documentação interativa (Swagger UI): `http://localhost:8080/` — especificação OpenAPI: `http://localhost:8080/v3/api-docs`
 
-**Body de exemplo (criação):**
+### 📖 Livros — `/livros`
+
+| Método | Endpoint | Descrição | Resposta |
+|---|---|---|---|
+| `POST` | `/livros` | Cadastrar livro | `201 Created` |
+| `GET` | `/livros` | Listar livros | `200 OK` |
+| `GET` | `/livros/{id}` | Buscar livro por ID | `200 OK` / `404` |
+| `PUT` | `/livros/{id}` | Atualizar livro | `200 OK` / `404` |
+| `DELETE` | `/livros/{id}` | Excluir livro | `204 No Content` / `404` |
+
+Body (POST/PUT):
+
 ```json
 {
-  "id": 1,
   "nome_livro": "Clean Code",
   "genero": "Tecnologia",
   "autor": "Robert C. Martin",
@@ -178,20 +181,20 @@ O `Dockerfile` usa build multi-stage: compila o projeto com Maven em uma imagem 
 }
 ```
 
-### 👤 Clientes (`/cliente`)
+### 👤 Clientes — `/clientes`
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `PUT` | `/cliente` | Criar cliente |
-| `GET` | `/cliente` | Listar clientes |
-| `GET` | `/cliente/{id}` | Buscar por ID |
-| `PUT` | `/cliente/{id}` | Atualizar cliente |
-| `DELETE` | `/cliente/{id}` | Deletar cliente |
+| Método | Endpoint | Descrição | Resposta |
+|---|---|---|---|
+| `POST` | `/clientes` | Cadastrar cliente | `201 Created` |
+| `GET` | `/clientes` | Listar clientes | `200 OK` |
+| `GET` | `/clientes/{id}` | Buscar cliente por ID | `200 OK` / `404` |
+| `PUT` | `/clientes/{id}` | Atualizar cliente | `200 OK` / `404` |
+| `DELETE` | `/clientes/{id}` | Excluir cliente | `204 No Content` / `404` |
 
-**Body de exemplo (criação):**
+Body (POST/PUT):
+
 ```json
 {
-  "id": 1,
   "nome": "Ricardo",
   "nome_livro": "Clean Code",
   "duracao_aluguel": "7 dias",
@@ -199,29 +202,61 @@ O `Dockerfile` usa build multi-stage: compila o projeto com Maven em uma imagem 
 }
 ```
 
----
-
-## ⚠️ Observações importantes
-
-* O `id` das entidades **não é auto incrementável**, deve ser informado manualmente.
-* O endpoint de criação de cliente utiliza `PUT` (não é o padrão REST mais comum).
-* Não há relacionamento entre `Cliente` e `Livro` (está como String).
-* Campos aceitam valores nulos.
-* No profile `prd`, o schema do banco é gerenciado exclusivamente pelo **Flyway** — a aplicação não cria nem altera tabelas automaticamente.
+> O `id` é gerado automaticamente pelo SQL Server (`IDENTITY`) — não precisa ser enviado no POST.
 
 ---
 
-## 💡 Melhorias futuras
+## 🧪 Testando a API (curl)
 
-* Adicionar validações (`@NotNull`, `@Size`)
-* Criar relacionamento entre Cliente e Livro (FK)
-* Implementar autenticação
-* Padronizar uso de `POST`
-* Melhorar tratamento de erros
+```bash
+# Inserir
+curl -X POST http://localhost:8080/livros -H "Content-Type: application/json" \
+  -d '{"nome_livro":"Clean Code","genero":"Tecnologia","autor":"Robert C. Martin","qtd_paginas":"400"}'
+
+# Consultar
+curl http://localhost:8080/livros
+curl http://localhost:8080/livros/1
+
+# Alterar
+curl -X PUT http://localhost:8080/livros/1 -H "Content-Type: application/json" \
+  -d '{"nome_livro":"Clean Code (2a ed.)","genero":"Tecnologia","autor":"Robert C. Martin","qtd_paginas":"464"}'
+
+# Excluir
+curl -X DELETE http://localhost:8080/livros/1
+```
+
+PowerShell:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:8080/clientes -ContentType "application/json" `
+  -Body '{"nome":"Ricardo","nome_livro":"Clean Code","duracao_aluguel":"7 dias","telefone":"11999999999"}'
+Invoke-RestMethod http://localhost:8080/clientes
+```
+
+### Conferindo os dados direto no SQL Server
+
+```bash
+docker exec -it sqlserver_biblioteca /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P "Biblioteca@2026" -C -d biblioteca_db \
+  -Q "SELECT * FROM livros; SELECT * FROM clientes;"
+```
+
+Também é possível conectar pelo **Azure Data Studio**, **SSMS** ou **DBeaver** com os dados da tabela de conexão acima.
 
 ---
 
-## 👨‍💻 Autor
+## 🛑 Parando o ambiente
 
-Carolina Pacifico
-Projeto desenvolvido para fins acadêmicos (Checkpoint 1 — Microservices and Web Engineering).
+```bash
+docker compose down        # para o SQL Server (mantém os dados)
+docker compose down -v     # para e apaga os dados
+```
+
+---
+
+## 👨‍💻 Integrantes
+
+| Nome | RM |
+|---|---|
+| Ricardo Henrique de Almeida Santos | RM557093 |
+| Carolina Pacifico | RM555000 |

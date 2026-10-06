@@ -1,20 +1,46 @@
-version: '3.8'
-
 services:
-  mysql:
-    image: mysql:8.4
-    container_name: mysql_biblioteca
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_biblioteca
     restart: always
 
     environment:
-      MYSQL_ROOT_PASSWORD: root_pwd
-      MYSQL_DATABASE: biblioteca_db
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Biblioteca@2026"
+      MSSQL_PID: "Developer"
 
     ports:
-      - "3306:3306"
+      - "1433:1433"
 
     volumes:
-      - mysql-data:/var/lib/mysql
+      - sqlserver-data:/var/opt/mssql
+
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  # Cria o banco biblioteca_db (SQL Server nao cria o database automaticamente)
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver_biblioteca_init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    entrypoint:
+      - /opt/mssql-tools18/bin/sqlcmd
+      - -S
+      - sqlserver
+      - -U
+      - sa
+      - -P
+      - Biblioteca@2026
+      - -C
+      - -Q
+      - "IF DB_ID('biblioteca_db') IS NULL CREATE DATABASE biblioteca_db"
+    restart: "no"
 
 volumes:
-  mysql-data:
+  sqlserver-data:

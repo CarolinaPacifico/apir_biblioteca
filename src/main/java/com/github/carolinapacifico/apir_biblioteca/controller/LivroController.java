@@ -11,15 +11,16 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/livro")
+@RequestMapping("/livros")
 @RequiredArgsConstructor
 public class LivroController {
 
     private final LivroRepository livroRepository;
 
     @PostMapping
-    public ResponseEntity<Livro> cachorro(@RequestBody Livro livro) {
-        return ResponseEntity.status(HttpStatus.OK).body(livroRepository.save(livro));
+    public ResponseEntity<Livro> create(@RequestBody Livro livro) {
+        livro.setId(null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(livroRepository.save(livro));
     }
 
     @GetMapping("/{id}")
@@ -52,8 +53,10 @@ public class LivroController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+        if (!livroRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
         livroRepository.deleteById(id);
         return ResponseEntity.noContent().build();
-
     }
 }

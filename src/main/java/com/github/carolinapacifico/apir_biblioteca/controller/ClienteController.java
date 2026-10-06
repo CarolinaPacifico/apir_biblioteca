@@ -11,15 +11,16 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/cliente")
+@RequestMapping("/clientes")
 @RequiredArgsConstructor
 public class ClienteController {
 
     private final ClienteRepository clienteRepository;
 
     @PostMapping
-    public ResponseEntity<Cliente> clinte(@RequestBody Cliente cliente) {
-        return ResponseEntity.status(HttpStatus.OK).body(clienteRepository.save(cliente));
+    public ResponseEntity<Cliente> create(@RequestBody Cliente cliente) {
+        cliente.setId(null);
+        return ResponseEntity.status(HttpStatus.CREATED).body(clienteRepository.save(cliente));
     }
 
     @GetMapping("/{id}")
@@ -52,8 +53,10 @@ public class ClienteController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
+        if (!clienteRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
         clienteRepository.deleteById(id);
         return ResponseEntity.noContent().build();
-
     }
 }
